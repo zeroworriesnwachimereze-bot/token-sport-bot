@@ -67,7 +67,7 @@ const TOKEN_PER_12H=0.857142857;
 const RATE=TOKEN_PER_12H/(12*60*60);
 const MINWD=12;
 let AdController=null;
-function initAdsgram(){try{if(window.Adsgram) AdController=window.Adsgram.init({ blockId: "bot-51745" });}catch(e){} }
+function initAdsgram(){try{if(window.Adsgram) AdController=window.Adsgram.init({ blockId: "int-51745" });}catch(e){} }
 const up=new URLSearchParams(window.location.search);
 let refFromUrl=up.get('ref') || up.get('start');
 if(refFromUrl && refFromUrl!==myId &&!inviter){inviter=refFromUrl; localStorage.setItem('inviter',inviter); fetch('/api/ref_join',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({newUser:myId,inviter:inviter})});}
