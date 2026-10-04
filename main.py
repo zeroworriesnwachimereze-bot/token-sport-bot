@@ -19,7 +19,6 @@ HTML = """<!DOCTYPE html><html><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <title>TOKEN SPORT MINING</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<!-- MONETAG - ZONE 11950872 - INSTANT ACTIVE -->
 <script src='//libtl.com/sdk.js' data-zone='11950872' data-sdk='show_11950872'></script>
 <style>
 *{box-sizing:border-box}
@@ -75,7 +74,6 @@ function ui(){ document.getElementById('bal').innerText=bal.toFixed(8); document
 function loadRefStats(){ fetch('/api/ref_stats?userId='+myId).then(r=>r.json()).then(d=>{ document.getElementById('refStat').innerHTML=`Friends: ${d.count} | Ref Earned: ${d.earned.toFixed(8)}<br>Bonus: 10% from friends mining<br>WD ADS: ${wAds}/5`; }); }
 function showWarn(t,ok=false){let w=document.getElementById('warn'); w.style.display='block'; w.innerText=t; w.className=ok?'warn ok':'warn'; if(ok) setTimeout(()=>w.style.display='none',3500);}
 function copyRef(){let i=document.getElementById('refLink'); i.select(); document.execCommand('copy'); showWarn('Invite Link Copied! Share = 10% bonus!',true);}
-
 async function watchAdMining(){
     if(mAds>=8){startMining();return;}
     let btn=document.getElementById('adBtn');
@@ -93,9 +91,7 @@ async function watchAdMining(){
         setTimeout(()=>{ btn.disabled=false; ui(); },3000);
     }
 }
-
 function startMining(){start=Date.now(); isMining=true; mAds=0; save(); ui(); showWarn('12H Mining Started! 7 Days to 12!',true);}
-
 async function watchAdWD(){
     if(wAds>=5){wUnlock=true; save(); ui(); return;}
     let btn=document.getElementById('wdAdBtn');
@@ -112,7 +108,6 @@ async function watchAdWD(){
         setTimeout(()=>{ btn.disabled=false; ui(); },3000);
     }
 }
-
 function mineClick(){if(!isMining){showWarn('Watch 8 ADS (15s)!');return;} bal+=0.00002; save(); ui();}
 function tick(){ if(isMining && start){ let el=Date.now()-start, left=TWELVE-el; if(left<=0){isMining=false; start=0; save(); document.getElementById('timer').innerText='Finished! Watch 8 ADS';} else{let add=RATE; bal+=add; if(inviter && Math.random()<0.1){fetch('/api/ref_mine',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({inviter:inviter,amount:add})});} save(); let h=Math.floor(left/3600000), m=Math.floor((left%3600000)/60000), s=Math.floor((left%60000)/1000); document.getElementById('timer').innerText=`Mining: ${h}h ${m}m ${s}s left - 0.86/12H`; document.getElementById('bal').innerText=bal.toFixed(8);} }else{document.getElementById('timer').innerText='Paused - Watch 8 ADS (15s) - 7 Days to 12 TOKEN';} }
 function doWD(){ let w=document.getElementById('wallet').value.trim(); if(w.length<10){alert("Enter wallet");return;} if(bal<12){alert("Need 12 - 7 Days Mining");return;} if(!wUnlock){alert("Watch 5 ADS");return;} fetch('/api/withdraw',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({wallet:w,amount:bal,userId:myId,inviter:inviter})}).then(r=>r.json()).then(d=>{if(d.ok){bal=0;wAds=0;wUnlock=false;save();ui();alert('Sent!');}});}
@@ -187,10 +182,8 @@ def admin_panel():
                 try: rewards.append(json.loads(line))
                 except: pass
     except: pass
-    
     total_refs = sum([r.get('count',0) for r in refs.values()])
     total_earned_ref = sum([r.get('earned',0) for r in refs.values()])
-    
     html=f"""
     <html><head><meta name='viewport' content='width=device-width,initial-scale=1'>
     <title>ADMIN - TOKEN SPORT</title></head>
