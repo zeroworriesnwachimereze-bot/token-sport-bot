@@ -176,8 +176,9 @@ def reward_api():
 
 @app.route('/admin')
 def admin_panel():
-    key = request.args.get('key','')
-    if key!= ADMIN_ID: return "Access Denied!", 403
+    key = request.args.get('key','') or request.args.get('admin','')
+    if key != ADMIN_ID: 
+        return f"<h1 style='color:red; text-align:center; margin-top:100px; font-family:Arial'>Access Denied!<br><br>Use: /admin?admin={ADMIN_ID}</h1>", 403
     refs=load_refs()
     rewards=[]
     try:
@@ -186,7 +187,41 @@ def admin_panel():
                 try: rewards.append(json.loads(line))
                 except: pass
     except: pass
-    html=f"<html><body style='background:#000;color:#fff;font-family:Arial;padding:15px'><h2 style='color:#ffd700'>BOSS ADMIN - MONETAG 11950872 FIXED - 7 DAYS TO 12 - REF 10%</h2><div style='border:2px solid #ffd700;padding:10px;margin:10px 0'>Total Watches: {len(rewards)} | Referrers: {len(refs)} | Zone: 11950872 ACTIVE!</div><pre style='background:#111;padding:10px;white-space:pre-wrap'>{json.dumps(refs, indent=2)}</pre></body></html>"
+    
+    total_refs = sum([r.get('count',0) for r in refs.values()])
+    total_earned_ref = sum([r.get('earned',0) for r in refs.values()])
+    
+    html=f"""
+    <html><head><meta name='viewport' content='width=device-width,initial-scale=1'>
+    <title>ADMIN - TOKEN SPORT</title></head>
+    <body style='background:#000;color:#fff;font-family:Arial;padding:15px'>
+    <h2 style='color:#ffd700;text-align:center'>🏆 BOSS ADMIN PANEL - FIXED</h2>
+    <div style='display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:15px 0'>
+        <div style='background:#111;border:2px solid #ffd700;padding:15px;border-radius:12px;text-align:center'>
+            <h3 style='margin:0;color:#ffd700'>{len(rewards)}</h3><p style='margin:5px 0'>Total Ad Watches</p>
+        </div>
+        <div style='background:#111;border:2px solid #00ff55;padding:15px;border-radius:12px;text-align:center'>
+            <h3 style='margin:0;color:#00ff55'>{len(refs)}</h3><p style='margin:5px 0'>Referrers</p>
+        </div>
+        <div style='background:#111;border:2px solid #00aaff;padding:15px;border-radius:12px;text-align:center'>
+            <h3 style='margin:0;color:#00aaff'>{total_refs}</h3><p style='margin:5px 0'>Total Friends</p>
+        </div>
+        <div style='background:#111;border:2px solid #ff55ff;padding:15px;border-radius:12px;text-align:center'>
+            <h3 style='margin:0;color:#ff55ff'>{total_earned_ref:.4f}</h3><p style='margin:5px 0'>Ref Bonus</p>
+        </div>
+    </div>
+    <div style='background:#111;padding:12px;border-radius:10px;margin:10px 0;border-left:4px solid #ffd700'>
+        <b>Zone:</b> 11950872 ACTIVE! ✅<br>
+        <b>Profit:</b> $0.001 (19 impressions)<br>
+        <b>Bot:</b> @token_sport_mining_bot<br>
+        <b>Admin:</b> {ADMIN_ID}<br>
+        <a href='https://publishers.monetag.com' style='color:gold'>Check Monetag Dashboard</a>
+    </div>
+    <h3 style='color:#ffd700'>Referral Data:</h3>
+    <pre style='background:#111;padding:10px;border-radius:8px;white-space:pre-wrap;font-size:12px;max-height:400px;overflow:auto'>{json.dumps(refs, indent=2)}</pre>
+    <br><a href='/admin?admin={ADMIN_ID}' style='background:#ffd700;color:#000;padding:12px 20px;border-radius:20px;text-decoration:none;font-weight:bold;display:block;text-align:center'>🔄 REFRESH STATS</a>
+    </body></html>
+    """
     return html
 
 @app.route('/api/withdraw', methods=['POST'])
@@ -217,6 +252,14 @@ def bot_thread():
                 kb=InlineKeyboardMarkup()
                 kb.add(InlineKeyboardButton("OPEN MINING - 7 DAYS TO 12 + 10% REF", web_app=WebAppInfo(url=link)))
                 bot.send_message(m.chat.id, f"TOKEN SPORT MINING\\n\\nMONETAG ACTIVE - 0.86 per 12H = 12 in 7 DAYS!\\nInvite friends = 10% bonus!\\n\\n{link}", reply_markup=kb)
+            @bot.message_handler(commands=['admin'])
+            def admin_cmd(m):
+                if str(m.chat.id) == ADMIN_ID:
+                    dom=os.getenv("RENDER_EXTERNAL_HOSTNAME","") or ""
+                    admin_link = f"https://{dom}/admin?admin={ADMIN_ID}" if dom else "Set RENDER_EXTERNAL_HOSTNAME"
+                    bot.send_message(m.chat.id, f"🏆 ADMIN PANEL\\n\\nLink: {admin_link}\\n\\nYour ID: {ADMIN_ID}")
+                else:
+                    bot.send_message(m.chat.id, "Access Denied!")
             bot.infinity_polling(skip_pending=True, timeout=20, long_polling_timeout=20)
         except Exception as e:
             print(f"Retry {e}"); time.sleep(10)
