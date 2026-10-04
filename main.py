@@ -71,7 +71,7 @@ const up=new URLSearchParams(window.location.search);
 let refFromUrl=up.get('ref') || up.get('start');
 if(refFromUrl && refFromUrl!==myId &&!inviter){inviter=refFromUrl; localStorage.setItem('inviter',inviter); fetch('/api/ref_join',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({newUser:myId,inviter:inviter})});}
 function save(){localStorage.setItem('bal',bal);localStorage.setItem('start',start);localStorage.setItem('mAds',mAds);localStorage.setItem('wAds',wAds);localStorage.setItem('isMining',isMining);localStorage.setItem('wUnlock',wUnlock);}
-function ui(){ document.getElementById('bal').innerText=bal.toFixed(8); document.getElementById('mProg').innerText=`ADS: ${mAds}/8`; document.getElementById('refLink').value=window.location.origin+'/?ref='+myId; document.getElementById('adBtn').innerText=`WATCH AD ${mAds}/8 (15s)`; document.getElementById('wdAdBtn').innerText=`WATCH AD ${wAds}/5 (15s)`; if(mAds>=8) document.getElementById('adBtn').innerText="START MINING!"; }
+function ui(){ document.getElementById('bal').innerText=bal.toFixed(8); document.getElementById('mProg').innerText=`ADS: ${mAds}/8`; document.getElementById('refLink').value=window.location.origin+'/?ref='+myId; document.getElementById('adBtn').innerText=`WATCH AD ${mAds}/8 (15s)`; document.getElementById('wdAdBtn').innerText=`WATCH AD ${wAds}/5 (15s)`; if(mAds>=8) document.getElementById('adBtn').innerText="START MINING!"; document.getElementById('adBtn').disabled=false; document.getElementById('wdAdBtn').disabled=false; }
 function loadRefStats(){ fetch('/api/ref_stats?userId='+myId).then(r=>r.json()).then(d=>{ document.getElementById('refStat').innerHTML=`Friends: ${d.count} | Ref Earned: ${d.earned.toFixed(8)}<br>Bonus: 10% from friends mining<br>WD ADS: ${wAds}/5`; }); }
 function showWarn(t,ok=false){let w=document.getElementById('warn'); w.style.display='block'; w.innerText=t; w.className=ok?'warn ok':'warn'; if(ok) setTimeout(()=>w.style.display='none',3500);}
 function copyRef(){let i=document.getElementById('refLink'); i.select(); document.execCommand('copy'); showWarn('Invite Link Copied! Share = 10% bonus!',true);}
@@ -87,10 +87,10 @@ async function watchAdMining(){
         mAds++; save(); ui();
         showWarn(`AD ${mAds}/8 DONE!`,true);
         fetch('/api/ads_watched',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId:myId})});
-        if(mAds>=8) startMining();
+        if(mAds>=8){ startMining(); } else { btn.disabled=false; }
     } catch(e) {
-        showWarn('Ad not ready, try again in 3s',false);
-        btn.disabled=false; ui();
+        showWarn('No ad now, wait 10s try again',false);
+        setTimeout(()=>{ btn.disabled=false; ui(); },3000);
     }
 }
 
@@ -106,9 +106,10 @@ async function watchAdWD(){
         await show_11950872();
         wAds++; if(wAds>=5) wUnlock=true; save(); ui();
         showWarn(`WD AD ${wAds}/5 DONE!`,true);
+        btn.disabled=false;
     } catch(e) {
-        showWarn('Ad not ready, try again in 3s',false);
-        btn.disabled=false; ui();
+        showWarn('No ad now, wait 10s try again',false);
+        setTimeout(()=>{ btn.disabled=false; ui(); },3000);
     }
 }
 
@@ -185,7 +186,7 @@ def admin_panel():
                 try: rewards.append(json.loads(line))
                 except: pass
     except: pass
-    html=f"<html><body style='background:#000;color:#fff;font-family:Arial;padding:15px'><h2 style='color:#ffd700'>BOSS ADMIN - MONETAG 11950872 - 7 DAYS TO 12 - REF 10%</h2><div style='border:2px solid #ffd700;padding:10px;margin:10px 0'>Total Watches: {len(rewards)} | Referrers: {len(refs)} | Zone: 11950872 ACTIVE!</div><pre style='background:#111;padding:10px;white-space:pre-wrap'>{json.dumps(refs, indent=2)}</pre></body></html>"
+    html=f"<html><body style='background:#000;color:#fff;font-family:Arial;padding:15px'><h2 style='color:#ffd700'>BOSS ADMIN - MONETAG 11950872 FIXED - 7 DAYS TO 12 - REF 10%</h2><div style='border:2px solid #ffd700;padding:10px;margin:10px 0'>Total Watches: {len(rewards)} | Referrers: {len(refs)} | Zone: 11950872 ACTIVE!</div><pre style='background:#111;padding:10px;white-space:pre-wrap'>{json.dumps(refs, indent=2)}</pre></body></html>"
     return html
 
 @app.route('/api/withdraw', methods=['POST'])
@@ -208,14 +209,14 @@ def bot_thread():
             bot=telebot.TeleBot(BOT_TOKEN)
             try: bot.delete_webhook(drop_pending_updates=True); time.sleep(2)
             except: pass
-            print("Bot LIVE - MONETAG 11950872 - 7 DAYS + 10% REF")
+            print("Bot LIVE - MONETAG 11950872 FIXED")
             @bot.message_handler(commands=['start'])
             def s(m):
                 dom=os.getenv("RENDER_EXTERNAL_HOSTNAME","") or os.getenv("REPLIT_DEV_DOMAIN","")
                 link=f"https://{dom}/?ref={m.chat.id}" if dom else f"https://t.me/{BOT_USERNAME}"
                 kb=InlineKeyboardMarkup()
                 kb.add(InlineKeyboardButton("OPEN MINING - 7 DAYS TO 12 + 10% REF", web_app=WebAppInfo(url=link)))
-                bot.send_message(m.chat.id, f"TOKEN SPORT MINING\n\nMONETAG ACTIVE - 0.86 per 12H = 12 in 7 DAYS!\nInvite friends = 10% bonus!\n\n{link}", reply_markup=kb)
+                bot.send_message(m.chat.id, f"TOKEN SPORT MINING\\n\\nMONETAG ACTIVE - 0.86 per 12H = 12 in 7 DAYS!\\nInvite friends = 10% bonus!\\n\\n{link}", reply_markup=kb)
             bot.infinity_polling(skip_pending=True, timeout=20, long_polling_timeout=20)
         except Exception as e:
             print(f"Retry {e}"); time.sleep(10)
