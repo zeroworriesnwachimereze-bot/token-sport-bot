@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TOKEN SPORT MINING</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Adsgram SDK - FOR YOUR NEW BLOCK bot-51745 -->
-    <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+    <!-- MONETAG SDK - ZONE 11950872 - INSTANT ACTIVE! -->
+    <script src='//libtl.com/sdk.js' data-zone='11950872' data-sdk='show_11950872'></script>
     <style>
         body { background: #000; color: #fff; font-family: Arial; text-align: center; padding: 20px; }
         .box { background: #111; padding: 20px; border-radius: 15px; margin: 15px 0; border: 1px solid #0f0; }
@@ -42,24 +42,19 @@
     </div>
 
 <script>
-// ============ START - PUT REFERRAL JAVASCRIPT HERE ============
 const tg = window.Telegram.WebApp;
 tg.expand();
 const myId = tg.initDataUnsafe?.user?.id || localStorage.getItem('myId') || Math.floor(Math.random()*1000000);
 localStorage.setItem('myId', myId);
 
-// GET REFERRER ID FROM URL - THIS NA THE 10% LOGIC
 const urlParams = new URLSearchParams(window.location.search);
 const referrerId = urlParams.get('start'); 
 
 if (referrerId && referrerId != myId) {
-    console.log("My Referrer is: " + referrerId);
     localStorage.setItem('referrer', referrerId);
-    // Tell backend say new user come with referrer
-    fetch(`/api/user/${myId}`); // This go create user with referral
+    fetch(`/api/user/${myId}`);
 }
 
-// Show Referral Link
 const myRefLink = `https://t.me/token_sport_mining_bot?start=${myId}`;
 document.getElementById('refLink').innerText = myRefLink;
 
@@ -67,14 +62,12 @@ function copyRef() {
     navigator.clipboard.writeText(myRefLink);
     alert("Referral Link Copied! Share am: " + myRefLink);
 }
-// ============ END REFERRAL CODE ============
 
-// ============ MINING LOGIC - 12 TOKEN IN 7 DAYS ============
 let balance = parseFloat(localStorage.getItem('balance') || '0');
 let adsWatched = parseInt(localStorage.getItem('adsWatched') || '0');
 let miningActiveUntil = parseInt(localStorage.getItem('miningUntil') || '0');
 
-const TOKEN_PER_HOUR = 12 / 7 / 24; // 0.07142857
+const TOKEN_PER_HOUR = 12 / 7 / 24;
 const TOKEN_PER_SECOND = TOKEN_PER_HOUR / 3600;
 
 function updateUI() {
@@ -94,7 +87,6 @@ function updateUI() {
         document.getElementById('watchAdBtn').disabled = false;
         document.getElementById('watchAdBtn').innerText = `📺 WATCH AD (${adsWatched}/8)`;
         if (adsWatched >= 8) {
-            // Start 12 hours mining
             miningActiveUntil = Date.now() + (12*3600*1000);
             localStorage.setItem('miningUntil', miningActiveUntil);
             adsWatched = 0;
@@ -104,91 +96,4 @@ function updateUI() {
     }
 }
 
-// Mining Interval - Every second add token if active
-setInterval(() => {
-    if (miningActiveUntil > Date.now()) {
-        let add = TOKEN_PER_SECOND;
-        balance += add;
-        localStorage.setItem('balance', balance);
-        
-        // SEND TO BACKEND - THIS GO ALSO GIVE YOUR REFERRER 10%
-        fetch('/api/add_mined', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({userId: myId, amount: add})
-        });
-        
-        updateUI();
-    }
-}, 1000);
-
-// ============ ADSGRAM WITH 15 SECONDS ENFORCEMENT ============
-function watchAd() {
-    document.getElementById('adMsg').innerText = "Loading Ad...";
-    
-    // YOUR NEW BLOCK ID - bot-51745
-    const AdController = window.Adsgram.init({ blockId: "bot-51745" });
-
-    AdController.show().then((result) => {
-        // result.done = true if watched full 15s
-        if (result.done) {
-            document.getElementById('adMsg').innerText = "✅ Ad Complete! +1 Count";
-            adsWatched++;
-            localStorage.setItem('adsWatched', adsWatched);
-            fetch('/api/ads_watched', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({userId: myId})});
-            updateUI();
-            
-            // Call reward URL
-            fetch(`/api/adsgram?userId=${myId}`);
-            
-            if (adsWatched >= 8) {
-                alert("GBAM! 8 Ads Done! Mining go start for 12hrs now!");
-                updateUI();
-            }
-        } else {
-            document.getElementById('adMsg').innerText = "❌ MUST WATCH FULL 15s - NO REWARD!";
-            alert("❌ You close ad before 15s! Watch full 15 seconds to get reward!");
-        }
-    }).catch((result) => {
-        document.getElementById('adMsg').innerText = "❌ Ad Error - Try Again. Error: " + result.error;
-    });
-}
-
-function withdraw() {
-    // Need to watch 5 ads for withdrawal
-    let withdrawAds = parseInt(localStorage.getItem('withdrawAds') || '0');
-    if (withdrawAds < 5) {
-        if (confirm(`You need watch 5 ADS to withdraw! You don watch ${withdrawAds}/5. Watch now?`)) {
-            // Show ad for withdrawal
-            const AdController = window.Adsgram.init({ blockId: "bot-51745" });
-            AdController.show().then((result) => {
-                if (result.done) {
-                    withdrawAds++;
-                    localStorage.setItem('withdrawAds', withdrawAds);
-                    alert(`Good! ${withdrawAds}/5 Ads watched for withdrawal!`);
-                    if (withdrawAds >= 5) {
-                        alert(`You fit withdraw ${balance.toFixed(4)} TOKEN now! (0.12 USD = 12 TOKEN)`);
-                    }
-                } else {
-                    alert("Must watch full 15s!");
-                }
-            });
-        }
-        return;
-    }
-    alert(`Withdrawal Request: ${balance.toFixed(4)} TOKEN = $${(balance/12*0.12).toFixed(2)} - Admin go pay you!`);
-}
-
-// Load User Data from Backend
-fetch(`/api/user/${myId}`).then(r=>r.json()).then(data=>{
-    if (data.balance) {
-        balance = data.balance;
-        document.getElementById('refCount').innerText = data.referrals ? data.referrals.length : 0;
-    }
-    updateUI();
-});
-
-updateUI();
-</script>
-</body>
-  </html>
+setInterval(() =>
