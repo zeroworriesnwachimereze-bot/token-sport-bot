@@ -19,7 +19,8 @@ HTML = """<!DOCTYPE html><html><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <title>TOKEN SPORT MINING</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+<!-- MONETAG - ZONE 11950872 - INSTANT ACTIVE -->
+<script src='//libtl.com/sdk.js' data-zone='11950872' data-sdk='show_11950872'></script>
 <style>
 *{box-sizing:border-box}
 body{background:#000;color:#fff;font-family:Arial,sans-serif;margin:0;padding:10px;text-align:center}
@@ -66,23 +67,55 @@ const TWELVE=12*60*60*1000;
 const TOKEN_PER_12H=0.857142857;
 const RATE=TOKEN_PER_12H/(12*60*60);
 const MINWD=12;
-let AdController=null;
-function initAdsgram(){try{if(window.Adsgram) AdController=window.Adsgram.init({ blockId: "int-51745" });}catch(e){} }
 const up=new URLSearchParams(window.location.search);
 let refFromUrl=up.get('ref') || up.get('start');
 if(refFromUrl && refFromUrl!==myId &&!inviter){inviter=refFromUrl; localStorage.setItem('inviter',inviter); fetch('/api/ref_join',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({newUser:myId,inviter:inviter})});}
 function save(){localStorage.setItem('bal',bal);localStorage.setItem('start',start);localStorage.setItem('mAds',mAds);localStorage.setItem('wAds',wAds);localStorage.setItem('isMining',isMining);localStorage.setItem('wUnlock',wUnlock);}
-function ui(){ document.getElementById('bal').innerText=bal.toFixed(8); document.getElementById('mProg').innerText=`ADS: ${mAds}/8`; document.getElementById('refLink').value=window.location.origin+'/?ref='+myId; }
+function ui(){ document.getElementById('bal').innerText=bal.toFixed(8); document.getElementById('mProg').innerText=`ADS: ${mAds}/8`; document.getElementById('refLink').value=window.location.origin+'/?ref='+myId; document.getElementById('adBtn').innerText=`WATCH AD ${mAds}/8 (15s)`; document.getElementById('wdAdBtn').innerText=`WATCH AD ${wAds}/5 (15s)`; if(mAds>=8) document.getElementById('adBtn').innerText="START MINING!"; }
 function loadRefStats(){ fetch('/api/ref_stats?userId='+myId).then(r=>r.json()).then(d=>{ document.getElementById('refStat').innerHTML=`Friends: ${d.count} | Ref Earned: ${d.earned.toFixed(8)}<br>Bonus: 10% from friends mining<br>WD ADS: ${wAds}/5`; }); }
 function showWarn(t,ok=false){let w=document.getElementById('warn'); w.style.display='block'; w.innerText=t; w.className=ok?'warn ok':'warn'; if(ok) setTimeout(()=>w.style.display='none',3500);}
 function copyRef(){let i=document.getElementById('refLink'); i.select(); document.execCommand('copy'); showWarn('Invite Link Copied! Share = 10% bonus!',true);}
-function watchAdMining(){ if(mAds>=8){startMining();return;} if(!AdController){showWarn('AD Error: Open inside Telegram!',false); initAdsgram(); return;} let btn=document.getElementById('adBtn'); btn.disabled=true; btn.innerText="Loading AD... Watch 15s!"; showWarn('MUST WATCH FULL 15s OR NO REWARD!',true); AdController.show().then((r)=>{ui(); if(r && r.done){mAds++; save(); ui(); showWarn(`AD ${mAds}/8 DONE!`,true); if(mAds>=8) startMining();} else{showWarn('Skip! MUST watch 15s! Locked 10s',false); btn.innerText="CHEAT! Wait 10s..."; let c=10; let iv=setInterval(()=>{c--; btn.innerText=`PUNISHED! Wait ${c}s...`; if(c<=0){clearInterval(iv); btn.disabled=false; ui();}},1000);}}).catch((e)=>{btn.disabled=false; ui(); showWarn('AD Error... Open in Telegram!',false);});}
+
+async function watchAdMining(){
+    if(mAds>=8){startMining();return;}
+    let btn=document.getElementById('adBtn');
+    btn.disabled=true;
+    btn.innerText="Loading AD... Watch 15s!";
+    showWarn('MUST WATCH FULL 15s OR NO REWARD!',true);
+    try {
+        await show_11950872();
+        mAds++; save(); ui();
+        showWarn(`AD ${mAds}/8 DONE!`,true);
+        fetch('/api/ads_watched',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId:myId})});
+        if(mAds>=8) startMining();
+    } catch(e) {
+        showWarn('Ad not ready, try again in 3s',false);
+        btn.disabled=false; ui();
+    }
+}
+
 function startMining(){start=Date.now(); isMining=true; mAds=0; save(); ui(); showWarn('12H Mining Started! 7 Days to 12!',true);}
-function watchAdWD(){ if(wAds>=5){wUnlock=true; save(); ui(); return;} if(!AdController){showWarn('AD Error: Open in Telegram!',false); return;} let btn=document.getElementById('wdAdBtn'); btn.disabled=true; btn.innerText="Loading WD AD... 15s!"; showWarn('WD AD - MUST WATCH FULL 15s!',true); AdController.show().then((r)=>{ui(); if(r && r.done){wAds++; if(wAds>=5) wUnlock=true; save(); ui(); showWarn(`WD AD ${wAds}/5 DONE!`,true);} else{showWarn('Skip! MUST watch 15s! Locked 10s',false); btn.innerText="CHEAT! Wait 10s..."; let c=10; let iv=setInterval(()=>{c--; btn.innerText=`PUNISHED! Wait ${c}s...`; if(c<=0){clearInterval(iv); btn.disabled=false; ui();}},1000);}}).catch((e)=>{btn.disabled=false; ui(); showWarn('AD Error... Open in Telegram!',false);});}
+
+async function watchAdWD(){
+    if(wAds>=5){wUnlock=true; save(); ui(); return;}
+    let btn=document.getElementById('wdAdBtn');
+    btn.disabled=true;
+    btn.innerText="Loading WD AD... 15s!";
+    showWarn('WD AD - MUST WATCH FULL 15s!',true);
+    try {
+        await show_11950872();
+        wAds++; if(wAds>=5) wUnlock=true; save(); ui();
+        showWarn(`WD AD ${wAds}/5 DONE!`,true);
+    } catch(e) {
+        showWarn('Ad not ready, try again in 3s',false);
+        btn.disabled=false; ui();
+    }
+}
+
 function mineClick(){if(!isMining){showWarn('Watch 8 ADS (15s)!');return;} bal+=0.00002; save(); ui();}
 function tick(){ if(isMining && start){ let el=Date.now()-start, left=TWELVE-el; if(left<=0){isMining=false; start=0; save(); document.getElementById('timer').innerText='Finished! Watch 8 ADS';} else{let add=RATE; bal+=add; if(inviter && Math.random()<0.1){fetch('/api/ref_mine',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({inviter:inviter,amount:add})});} save(); let h=Math.floor(left/3600000), m=Math.floor((left%3600000)/60000), s=Math.floor((left%60000)/1000); document.getElementById('timer').innerText=`Mining: ${h}h ${m}m ${s}s left - 0.86/12H`; document.getElementById('bal').innerText=bal.toFixed(8);} }else{document.getElementById('timer').innerText='Paused - Watch 8 ADS (15s) - 7 Days to 12 TOKEN';} }
 function doWD(){ let w=document.getElementById('wallet').value.trim(); if(w.length<10){alert("Enter wallet");return;} if(bal<12){alert("Need 12 - 7 Days Mining");return;} if(!wUnlock){alert("Watch 5 ADS");return;} fetch('/api/withdraw',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({wallet:w,amount:bal,userId:myId,inviter:inviter})}).then(r=>r.json()).then(d=>{if(d.ok){bal=0;wAds=0;wUnlock=false;save();ui();alert('Sent!');}});}
-ui(); loadRefStats(); setInterval(tick,1000); setInterval(loadRefStats,5000); tick(); setTimeout(initAdsgram,800);
+ui(); loadRefStats(); setInterval(tick,1000); setInterval(loadRefStats,5000); tick();
 if(window.Telegram && window.Telegram.WebApp){window.Telegram.WebApp.ready(); window.Telegram.WebApp.expand();}
 </script></body></html>
 """
@@ -121,6 +154,10 @@ def ref_mine():
     save_refs(refs)
     return jsonify({"ok":True})
 
+@app.route('/api/ads_watched', methods=['POST'])
+def ads_watched():
+    return jsonify({"ok":True})
+
 @app.route('/api/reward', methods=['GET','POST'])
 def reward_api():
     user_id = request.args.get('userId') or request.args.get('user_id') or ""
@@ -129,10 +166,10 @@ def reward_api():
             j = request.get_json(silent=True) or {}
             user_id = j.get('userId','') or j.get('user_id','')
         except: pass
-    print(f"REWARD OK for {user_id}")
+    print(f"MONETAG REWARD OK for {user_id} zone 11950872")
     try:
         with open('ads_rewards.json','a') as f:
-            f.write(json.dumps({"userId": user_id, "time": time.time()}) + "\n")
+            f.write(json.dumps({"userId": user_id, "time": time.time(), "zone":"11950872"}) + "\n")
     except: pass
     return jsonify({"ok": True, "reward": 10000})
 
@@ -148,7 +185,7 @@ def admin_panel():
                 try: rewards.append(json.loads(line))
                 except: pass
     except: pass
-    html=f"<html><body style='background:#000;color:#fff;font-family:Arial;padding:15px'><h2 style='color:#ffd700'>BOSS ADMIN - 7 DAYS TO 12 - REF 10%</h2><div style='border:2px solid #ffd700;padding:10px;margin:10px 0'>Total Watches: {len(rewards)} | Referrers: {len(refs)}</div><pre style='background:#111;padding:10px;white-space:pre-wrap'>{json.dumps(refs, indent=2)}</pre></body></html>"
+    html=f"<html><body style='background:#000;color:#fff;font-family:Arial;padding:15px'><h2 style='color:#ffd700'>BOSS ADMIN - MONETAG 11950872 - 7 DAYS TO 12 - REF 10%</h2><div style='border:2px solid #ffd700;padding:10px;margin:10px 0'>Total Watches: {len(rewards)} | Referrers: {len(refs)} | Zone: 11950872 ACTIVE!</div><pre style='background:#111;padding:10px;white-space:pre-wrap'>{json.dumps(refs, indent=2)}</pre></body></html>"
     return html
 
 @app.route('/api/withdraw', methods=['POST'])
@@ -157,7 +194,7 @@ def wd():
     wallet=data.get('wallet','')[:120]
     amt=float(data.get('amount',0))
     uid=data.get('userId','')
-    msg=f"NEW WD! {amt:.8f} Wallet:{wallet} UID:{uid}"
+    msg=f"NEW WD! {amt:.8f} Wallet:{wallet} UID:{uid} - MONETAG"
     print(msg)
     if BOT_TOKEN and ADMIN_ID:
         try: telebot.TeleBot(BOT_TOKEN).send_message(int(ADMIN_ID), msg)
@@ -171,14 +208,14 @@ def bot_thread():
             bot=telebot.TeleBot(BOT_TOKEN)
             try: bot.delete_webhook(drop_pending_updates=True); time.sleep(2)
             except: pass
-            print("Bot LIVE - 7 DAYS + 10% REF")
+            print("Bot LIVE - MONETAG 11950872 - 7 DAYS + 10% REF")
             @bot.message_handler(commands=['start'])
             def s(m):
                 dom=os.getenv("RENDER_EXTERNAL_HOSTNAME","") or os.getenv("REPLIT_DEV_DOMAIN","")
                 link=f"https://{dom}/?ref={m.chat.id}" if dom else f"https://t.me/{BOT_USERNAME}"
                 kb=InlineKeyboardMarkup()
                 kb.add(InlineKeyboardButton("OPEN MINING - 7 DAYS TO 12 + 10% REF", web_app=WebAppInfo(url=link)))
-                bot.send_message(m.chat.id, f"TOKEN SPORT MINING\\n\\nNEW: 0.86 per 12H = 12 in 7 DAYS!\\nInvite friends = 10% bonus!\\n\\n{link}", reply_markup=kb)
+                bot.send_message(m.chat.id, f"TOKEN SPORT MINING\n\nMONETAG ACTIVE - 0.86 per 12H = 12 in 7 DAYS!\nInvite friends = 10% bonus!\n\n{link}", reply_markup=kb)
             bot.infinity_polling(skip_pending=True, timeout=20, long_polling_timeout=20)
         except Exception as e:
             print(f"Retry {e}"); time.sleep(10)
