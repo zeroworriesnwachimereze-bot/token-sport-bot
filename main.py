@@ -1,125 +1,78 @@
-import os
-import json
-import asyncio
+import os, json, asyncio
 from threading import Thread
 from flask import Flask, request, jsonify
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, ContextTypes
 
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
-ADMIN_ID = int(os.environ.get("ADMIN_ID", "0"))
-DB_FILE = "db.json"
+BOT_TOKEN=os.environ.get("BOT_TOKEN")
+ADMIN_ID=int(os.environ.get("ADMIN_ID","0"))
+DB_FILE="db.json"
+app=Flask(__name__)
 
-app = Flask(__name__)
-
-# --- DB ---
 def load_db():
-    if not os.path.exists(DB_FILE):
-        return {"users": {}, "withdraws": []}
+    if not os.path.exists(DB_FILE): return {"users":{}}
     try:
-        with open(DB_FILE, "r") as f:
-            return json.load(f)
-    except:
-        return {"users": {}, "withdraws": []}
+        with open(DB_FILE,"r") as f: return json.load(f)
+    except: return {"users":{}}
+def save_db(d):
+    with open(DB_FILE,"w") as f: json.dump(d,f)
 
-def save_db(data):
-    with open(DB_FILE, "w") as f:
-        json.dump(data, f)
-
-# --- WEBSITE HTML (No need templates folder) ---
-HTML_PAGE = """
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Token Sport Mining</title>
+HTML_PAGE = """<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Token Mining</title>
 <script src="https://fpyf8.com/88/tag.min.js" data-zone="180690" async data-cfasync="false"></script>
-<style>
-body{font-family:Arial;background:#0f172a;color:white;text-align:center;padding:20px}
-.card{background:#1e293b;padding:20px;border-radius:15px;max-width:400px;margin:auto}
-button{background:#22c55e;color:white;border:none;padding:15px 25px;border-radius:10px;font-size:18px;width:100%;margin-top:10px}
-#bal{font-size:32px;color:#facc15}
-</style>
-</head>
-<body>
-<div class="card">
-<h2>⚽ Token Sport Mining</h2>
-<p>Balance: <span id="bal">0</span> Tokens</p>
-<p>Ads Watched: <span id="wat">0</span>/10</p>
-<button onclick="watchAd()">🎬 Watch Ad +20 Tokens</button>
-<p id="msg"></p>
-</div>
+<style>body{font-family:Arial;background:#0f172a;color:white;text-align:center;padding:20px}.card{background:#1e293b;padding:20px;border-radius:15px;max-width:400px;margin:auto}button{background:#22c55e;color:white;border:none;padding:15px 25px;border-radius:10px;width:100%;font-size:18px;margin-top:15px}#bal{font-size:32px;color:#facc15}</style>
+</head><body><div class="card"><h2>⚽ Token Sport Mining</h2><p>Balance: <span id="bal">0</span> Tokens</p><button onclick="watchAd()">🎬 Watch Ad +20 Tokens</button><p id="msg" style="color:#22c55e;margin-top:10px"></p></div>
 <script>
-let userId = new URLSearchParams(window.location.search).get('user_id') || '0';
-async function loadBal(){
-  let r = await fetch('/get_balance?user_id='+userId);
-  let j = await r.json();
-  document.getElementById('bal').innerText=j.balance;
-  document.getElementById('wat').innerText=Math.floor(j.balance/20)%10;
-}
+let uid=new URLSearchParams(location.search).get('user_id')||'0';
+async function loadBal(){let r=await fetch('/get_balance?user_id='+uid);let j=await r.json();document.getElementById('bal').innerText=j.balance}
 async function watchAd(){
-  if(typeof show_180690 === 'function'){ await show_180690(); }
-  else { await new Promise(r=>setTimeout(r,3000)); }
-  let res = await fetch('/add_token',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId})});
-  let data = await res.json();
-  document.getElementById('bal').innerText=data.balance;
-  document.getElementById('msg').innerText='✅ +20 Tokens Added!';
-  loadBal();
+  try{if(typeof show_180690==='function'){await show_180690()}else{await new Promise(r=>setTimeout(r,3000))}}catch(e){}
+  let res=await fetch('/add_token',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid})});
+  let d=await res.json();document.getElementById('bal').innerText=d.balance;document.getElementById('msg').innerText='✅ +20 Added!';
 }
 loadBal();
-</script>
-</body>
-</html>
-"""
+</script></body></html>"""
 
 @app.route("/")
-def index():
-    return HTML_PAGE
+def index(): return HTML_PAGE
 
-@app.route("/add_token", methods=["POST"])
+@app.route("/add_token",methods=["POST"])
 def add_token():
-    data = request.json
-    user_id = str(data.get("user_id"))
-    db = load_db()
-    if user_id not in db["users"]:
-        db["users"][user_id] = {"balance": 0, "watched": 0}
-    db["users"][user_id]["balance"] += 20
-    db["users"][user_id]["watched"] += 1
-    save_db(db)
-    return jsonify({"ok": True, "balance": db["users"][user_id]["balance"]})
+    data=request.json; uid=str(data.get("user_id")); db=load_db()
+    if uid not in db["users"]: db["users"][uid]={"balance":0}
+    db["users"][uid]["balance"]+=20; save_db(db)
+    return jsonify({"ok":True,"balance":db["users"][uid]["balance"]})
 
 @app.route("/get_balance")
 def get_balance():
-    user_id = str(request.args.get("user_id"))
-    db = load_db()
-    bal = db["users"].get(user_id, {}).get("balance", 0)
-    return jsonify({"balance": bal})
+    uid=str(request.args.get("user_id")); db=load_db()
+    return jsonify({"balance":db["users"].get(uid,{}).get("balance",0)})
 
-# --- BOT ---
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = str(update.effective_user.id)
-    db = load_db()
-    if user_id not in db["users"]:
-        db["users"][user_id] = {"balance": 0, "watched": 0}
-        save_db(db)
-    bal = db["users"][user_id]["balance"]
-    web_url = f"https://token-sport-bot-gitb0.onrender.com/?user_id={user_id}"
-    keyboard = [[InlineKeyboardButton("🎮 Open Mining Site", url=web_url)]]
-    text = f"⚽ Welcome!\n\n💰 Balance: {bal} Tokens\n🎬 Watch Ad = +20 Tokens\n\nClick below:"
-    await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
+async def start(update:Update,context:ContextTypes.DEFAULT_TYPE):
+    uid=str(update.effective_user.id); db=load_db()
+    if uid not in db["users"]: db["users"][uid]={"balance":0}; save_db(db)
+    bal=db["users"][uid]["balance"]; url=f"https://token-sport-bot-gitb0.onrender.com/?user_id={uid}"
+    kb=[[InlineKeyboardButton("🎮 Open Mining Site",url=url)]]
+    await update.message.reply_text(f"⚽ Welcome!\n\n💰 Balance: {bal} Tokens\n🎬 Watch Ad = +20 Tokens",reply_markup=InlineKeyboardMarkup(kb))
+
+async def admin(update:Update,context:ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_ID:
+        await update.message.reply_text("❌ You are not admin")
+        return
+    db=load_db(); users=len(db["users"]); total=sum(u.get("balance",0) for u in db["users"].values())
+    await update.message.reply_text(f"👑 Admin Panel\n\n👥 Users: {users}\n💰 Total Tokens: {total}\n\nSite: https://token-sport-bot-gitb0.onrender.com")
 
 def run_flask():
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0",port=int(os.environ.get("PORT",10000)))
 
 def run_bot():
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    application = Application.builder().token(BOT_TOKEN).build()
-    application.add_handler(CommandHandler("start", start))
+    loop=asyncio.new_event_loop(); asyncio.set_event_loop(loop)
+    app2=Application.builder().token(BOT_TOKEN).build()
+    app2.add_handler(CommandHandler("start",start))
+    app2.add_handler(CommandHandler("admin",admin))
     print("Bot is starting polling...")
-    application.run_polling()
+    app2.run_polling()
 
-if __name__ == "__main__":
-    Thread(target=run_flask, daemon=True).start()
+if __name__=="__main__":
+    Thread(target=run_flask,daemon=True).start()
     run_bot()
