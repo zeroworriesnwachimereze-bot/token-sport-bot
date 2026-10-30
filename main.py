@@ -21,26 +21,28 @@ HTML_PAGE = """<!DOCTYPE html><html><head><meta name="viewport" content="width=d
 <title>Token Mining</title>
 <script src="https://fpyf8.com/88/tag.min.js" data-zone="180690" async data-cfasync="false"></script>
 <style>body{font-family:Arial;background:#0f172a;color:white;text-align:center;padding:20px}.card{background:#1e293b;padding:20px;border-radius:15px;max-width:400px;margin:auto}button{background:#22c55e;color:white;border:none;padding:15px 25px;border-radius:10px;width:100%;font-size:18px;margin-top:15px}#bal{font-size:32px;color:#facc15}</style>
-</head><body><div class="card"><h2>⚽ Token Sport Mining</h2><p>Balance: <span id="bal">0</span> Tokens</p><button onclick="watchAd()">🎬 Watch Ad +20 Tokens</button><p id="msg" style="color:#22c55e;margin-top:10px"></p></div>
+</head><body><div class="card"><h2>⚽ Token Sport Mining</h2><p>Balance: <span id="bal">0</span> Tokens</p><p>5 Ads = 200 Tokens</p><button onclick="watchAd()">🎬 Watch Ad +40 Tokens</button><p id="msg" style="color:#22c55e;margin-top:10px"></p></div>
 <script>
 let uid=new URLSearchParams(location.search).get('user_id')||'0';
 async function loadBal(){let r=await fetch('/get_balance?user_id='+uid);let j=await r.json();document.getElementById('bal').innerText=j.balance}
 async function watchAd(){
   try{if(typeof show_180690==='function'){await show_180690()}else{await new Promise(r=>setTimeout(r,3000))}}catch(e){}
   let res=await fetch('/add_token',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid})});
-  let d=await res.json();document.getElementById('bal').innerText=d.balance;document.getElementById('msg').innerText='✅ +20 Added!';
+  let d=await res.json();document.getElementById('bal').innerText=d.balance;document.getElementById('msg').innerText='✅ +40 Added!';
 }
 loadBal();
 </script></body></html>"""
 
 @app.route("/")
 def index(): return HTML_PAGE
+@app.route("/<path:path>")
+def catch_all(path): return HTML_PAGE
 
 @app.route("/add_token",methods=["POST"])
 def add_token():
     data=request.json; uid=str(data.get("user_id")); db=load_db()
     if uid not in db["users"]: db["users"][uid]={"balance":0}
-    db["users"][uid]["balance"]+=20; save_db(db)
+    db["users"][uid]["balance"]+=40; save_db(db)
     return jsonify({"ok":True,"balance":db["users"][uid]["balance"]})
 
 @app.route("/get_balance")
@@ -53,14 +55,14 @@ async def start(update:Update,context:ContextTypes.DEFAULT_TYPE):
     if uid not in db["users"]: db["users"][uid]={"balance":0}; save_db(db)
     bal=db["users"][uid]["balance"]; url=f"https://token-sport-bot-gitb0.onrender.com/?user_id={uid}"
     kb=[[InlineKeyboardButton("🎮 Open Mining Site",url=url)]]
-    await update.message.reply_text(f"⚽ Welcome!\n\n💰 Balance: {bal} Tokens\n🎬 Watch Ad = +20 Tokens",reply_markup=InlineKeyboardMarkup(kb))
+    await update.message.reply_text(f"⚽ Welcome!\n\n💰 Balance: {bal} Tokens\n🎬 Watch Ad = +40 Tokens\n💡 5 Ads = 200 Tokens",reply_markup=InlineKeyboardMarkup(kb))
 
 async def admin(update:Update,context:ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
-        await update.message.reply_text("❌ You are not admin")
+        await update.message.reply_text("❌ Not admin")
         return
     db=load_db(); users=len(db["users"]); total=sum(u.get("balance",0) for u in db["users"].values())
-    await update.message.reply_text(f"👑 Admin Panel\n\n👥 Users: {users}\n💰 Total Tokens: {total}\n\nSite: https://token-sport-bot-gitb0.onrender.com")
+    await update.message.reply_text(f"👑 Admin Panel\n\n👥 Users: {users}\n💰 Total Tokens: {total}\n💰 Per Ad: 40 Tokens\n\nSite Link:\ntoken-sport-bot-gitb0.onrender.com")
 
 def run_flask():
     app.run(host="0.0.0.0",port=int(os.environ.get("PORT",10000)))
@@ -70,7 +72,7 @@ def run_bot():
     app2=Application.builder().token(BOT_TOKEN).build()
     app2.add_handler(CommandHandler("start",start))
     app2.add_handler(CommandHandler("admin",admin))
-    print("Bot is starting polling...")
+    print("Bot polling started...")
     app2.run_polling()
 
 if __name__=="__main__":
