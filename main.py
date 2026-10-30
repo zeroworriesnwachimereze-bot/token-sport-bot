@@ -35,12 +35,10 @@ loadBal();
 
 @app.route("/")
 def index(): return HTML_PAGE
-
 @app.route("/<path:anything>")
-def all_routes(anything): return HTML_PAGE
-
+def catch(anything): return HTML_PAGE
 @app.errorhandler(404)
-def not_found(e): return HTML_PAGE
+def nf(e): return HTML_PAGE
 
 @app.route("/add_token",methods=["POST"])
 def add_token():
@@ -48,7 +46,6 @@ def add_token():
     if uid not in db["users"]: db["users"][uid]={"balance":0}
     db["users"][uid]["balance"]+=40; save_db(db)
     return jsonify({"ok":True,"balance":db["users"][uid]["balance"]})
-
 @app.route("/get_balance")
 def get_balance():
     uid=str(request.args.get("user_id")); db=load_db()
@@ -59,31 +56,25 @@ async def start(update:Update,context:ContextTypes.DEFAULT_TYPE):
     if uid not in db["users"]: db["users"][uid]={"balance":0}; save_db(db)
     bal=db["users"][uid]["balance"]; url=f"https://token-sport-bot-gitb0.onrender.com/?user_id={uid}"
     kb=[[InlineKeyboardButton("🎮 Open Mining Site",url=url)]]
-    await update.message.reply_text(f"⚽ Welcome!\n\n💰 Balance: {bal} Tokens\n🎬 Watch Ad = +40 Tokens\n💡 5 Ads = 200 Tokens",reply_markup=InlineKeyboardMarkup(kb))
-
+    await update.message.reply_text(f"⚽ Welcome!\n\n💰 Balance: {bal}\n🎬 Watch Ad = +40 Tokens\n💡 5 Ads = 200 Tokens",reply_markup=InlineKeyboardMarkup(kb))
 async def admin(update:Update,context:ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
-        await update.message.reply_text("❌ Not admin")
-        return
+        await update.message.reply_text("❌ Not admin"); return
     db=load_db(); users=len(db["users"]); total=sum(u.get("balance",0) for u in db["users"].values())
-    await update.message.reply_text(f"👑 Admin\n\n👥 Users: {users}\n💰 Total: {total}\n💰 Per Ad: 40")
-
-def run_flask():
-    app.run(host="0.0.0.0",port=int(os.environ.get("PORT",10000)),use_reloader=False)
+    await update.message.reply_text(f"👑 Admin\n👥 Users: {users}\n💰 Total: {total}\nPer Ad: 40")
 
 def run_bot():
     while True:
         try:
             loop=asyncio.new_event_loop(); asyncio.set_event_loop(loop)
-            app2=Application.builder().token(BOT_TOKEN).build()
-            app2.add_handler(CommandHandler("start",start))
-            app2.add_handler(CommandHandler("admin",admin))
-            print("Bot polling started...")
-            app2.run_polling(drop_pending_updates=True)
+            application=Application.builder().token(BOT_TOKEN).build()
+            application.add_handler(CommandHandler("start",start))
+            application.add_handler(CommandHandler("admin",admin))
+            print("Bot polling...")
+            application.run_polling(drop_pending_updates=True)
         except Exception as e:
-            print(f"Bot crashed: {e}, restarting in 5 sec...")
-            time.sleep(5)
+            print(f"Bot error {e}, retry 5s..."); time.sleep(5)
 
 if __name__=="__main__":
-    Thread(target=run_flask,daemon=True).start()
-    run_bot()
+    Thread(target=run_bot,daemon=True).start()
+    app.run(host="0.0.0.0",port=int(os.environ.get("PORT",10000)),use_reloader=False)
