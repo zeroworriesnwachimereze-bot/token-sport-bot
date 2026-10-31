@@ -65,18 +65,19 @@ async def admin(update:Update,context:ContextTypes.DEFAULT_TYPE):
     db=load_db(); users=len(db["users"]); total=sum(u.get("balance",0) for u in db["users"].values())
     await update.message.reply_text(f"👑 Admin\n👥 Users: {users}\n💰 Total: {total}\nPer Ad: 40")
 
-def run_bot():
+def run_flask():
+    app.run(host="0.0.0.0",port=int(os.environ.get("PORT",10000)),use_reloader=False)
+
+if __name__=="__main__":
+    Thread(target=run_flask,daemon=True).start()
+    time.sleep(2)
     while True:
         try:
+            print("Starting bot polling - main thread...")
             application=Application.builder().token(BOT_TOKEN).build()
             application.add_handler(CommandHandler("start",start))
             application.add_handler(CommandHandler("admin",admin))
-            print("Bot polling started...")
-            application.run_polling(drop_pending_updates=True, close_loop=False)
+            application.run_polling(drop_pending_updates=True)
         except Exception as e:
-            print(f"Bot error {e}, retry 5s...")
+            print(f"Bot crashed: {e}, retry 5s...")
             time.sleep(5)
-
-if __name__=="__main__":
-    Thread(target=run_bot,daemon=True).start()
-    app.run(host="0.0.0.0",port=int(os.environ.get("PORT",10000)),use_reloader=False)
