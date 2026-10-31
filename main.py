@@ -1,4 +1,4 @@
-import os, json, asyncio, time
+import os, json, time
 from threading import Thread
 from flask import Flask, request, jsonify
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -46,6 +46,7 @@ def add_token():
     if uid not in db["users"]: db["users"][uid]={"balance":0}
     db["users"][uid]["balance"]+=40; save_db(db)
     return jsonify({"ok":True,"balance":db["users"][uid]["balance"]})
+
 @app.route("/get_balance")
 def get_balance():
     uid=str(request.args.get("user_id")); db=load_db()
@@ -56,7 +57,8 @@ async def start(update:Update,context:ContextTypes.DEFAULT_TYPE):
     if uid not in db["users"]: db["users"][uid]={"balance":0}; save_db(db)
     bal=db["users"][uid]["balance"]; url=f"https://token-sport-bot-gitb0.onrender.com/?user_id={uid}"
     kb=[[InlineKeyboardButton("🎮 Open Mining Site",url=url)]]
-    await update.message.reply_text(f"⚽ Welcome!\n\n💰 Balance: {bal}\n🎬 Watch Ad = +40 Tokens\n💡 5 Ads = 200 Tokens",reply_markup=InlineKeyboardMarkup(kb))
+    await update.message.reply_text(f"⚽ Welcome!\n\n💰 Balance: {bal} Tokens\n🎬 Watch Ad = +40 Tokens\n💡 5 Ads = 200 Tokens",reply_markup=InlineKeyboardMarkup(kb))
+
 async def admin(update:Update,context:ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         await update.message.reply_text("❌ Not admin"); return
@@ -66,14 +68,14 @@ async def admin(update:Update,context:ContextTypes.DEFAULT_TYPE):
 def run_bot():
     while True:
         try:
-            loop=asyncio.new_event_loop(); asyncio.set_event_loop(loop)
             application=Application.builder().token(BOT_TOKEN).build()
             application.add_handler(CommandHandler("start",start))
             application.add_handler(CommandHandler("admin",admin))
-            print("Bot polling...")
-            application.run_polling(drop_pending_updates=True)
+            print("Bot polling started...")
+            application.run_polling(drop_pending_updates=True, close_loop=False)
         except Exception as e:
-            print(f"Bot error {e}, retry 5s..."); time.sleep(5)
+            print(f"Bot error {e}, retry 5s...")
+            time.sleep(5)
 
 if __name__=="__main__":
     Thread(target=run_bot,daemon=True).start()
